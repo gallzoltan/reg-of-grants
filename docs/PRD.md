@@ -1,0 +1,30 @@
+# Termékfejlesztési Dokumentáció (PRD)
+## 1. Termék áttekintése
+### Termék neve: "Támogatás nyílvántartó"
+### Rövid leírás
+A termék célja egy alapítvány pénzügyi támogatóinak és támogatásaiknak a nyílvántartása. 
+### Célközönség: 
+A programot a pénzügyi adminisztrátor fogja használni.
+
+## 2. Célok
+### Fő célok: 
+időtakarékosság, automatizálás, egyszerűsítés
+
+## 3. Funkcionális követelmények
+### Fő funkciók: 
+Támogatók rögzítése/listázása, Támogatások rögzítése/listázása, exportálás (csv, xlsx) formátumban
+### Használati esetek: 
+A felhasználó feltölt egy banki tranzakciós CSV-t, a rendszer összerendeli a támogatás összegét a támogatóval és listázhatóvá, exportálhatóvá teszi azokat havi bontásban.
+A felhasználó egy űrlapon rögzít egy támogatót (név, cím, email, telefon)
+A felhasználó egy űrlapon rögzít egy támogatást egy támogatóhoz időpont adatokkal
+
+## 4. Nem funkcionális követelmények
+### Technikai korlátok: 
+Electron + better-sqlite3
+### Teljesítmény: 
+Várható terhelés havi 50-100 tranzakció, 
+Napi-heti listázás
+
+## 5. Felhasználói felület (UI) követelmények
+### Fontos UI elemek: 
+Tailwind CSS
