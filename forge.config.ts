@@ -7,17 +7,43 @@ import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-nati
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import path from 'node:path';
+import fs from 'node:fs';
 
 const config: ForgeConfig = {
+  hooks: {
+    packageAfterCopy: async (_forgeConfig, buildPath) => {
+      // Copy better-sqlite3 and its runtime dependencies into the packaged app.
+      // The Vite plugin only bundles JS — external native modules must be copied manually.
+      const nativeModules = ['better-sqlite3', 'bindings', 'file-uri-to-path'];
+      for (const mod of nativeModules) {
+        const src = path.join(__dirname, 'node_modules', mod);
+        const dest = path.join(buildPath, 'node_modules', mod);
+        fs.cpSync(src, dest, { recursive: true });
+      }
+
+      // Remove build-time artifacts so @electron/rebuild doesn't try to recompile
+      // (the pre-built .node binary is already correct for Electron).
+      const bsq3 = path.join(buildPath, 'node_modules', 'better-sqlite3');
+      for (const name of ['binding.gyp', 'src', 'deps']) {
+        const p = path.join(bsq3, name);
+        if (fs.existsSync(p)) fs.rmSync(p, { recursive: true });
+      }
+
+      // Strip install script and prebuild-install dep to prevent rebuild triggers
+      const pkgPath = path.join(bsq3, 'package.json');
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+      delete pkg.scripts;
+      delete pkg.dependencies['prebuild-install'];
+      fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+    },
+  },
   packagerConfig: {
     asar: {
       unpack: '**/*.node',
     },
   },
-  rebuildConfig: {
-    force: true,
-    onlyModules: ['better-sqlite3'],
-  },
+  rebuildConfig: {},
   makers: [
     new MakerSquirrel({}),
     new MakerZIP({}, ['darwin']),
