@@ -12,8 +12,11 @@ if (started) {
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1200,
+    height: 800,
+    minWidth: 900,
+    minHeight: 600,
+    title: 'Támogatás nyilvántartó',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -26,8 +29,6 @@ const createWindow = () => {
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
-
-  mainWindow.webContents.openDevTools();
 };
 
 app.on('ready', () => {

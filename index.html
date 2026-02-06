@@ -1,13 +1,31 @@
 <!doctype html>
-<html>
+<html lang="hu" class="h-full">
   <head>
     <meta charset="UTF-8" />
-    <title>Hello World!</title>
-
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+    />
+    <title>Támogatás nyilvántartó</title>
   </head>
-  <body>
-    <h1>💖 Hello World!</h1>
-    <p>Welcome to your Electron application.</p>
+  <body class="h-full bg-gray-50 text-gray-900">
+    <div class="flex h-full">
+      <!-- Sidebar -->
+      <aside id="sidebar" class="flex w-60 flex-col bg-gray-800 text-gray-100">
+        <div class="flex h-14 items-center gap-2 border-b border-gray-700 px-4">
+          <span class="text-lg font-semibold tracking-tight">Támogatás nyilvántartó</span>
+        </div>
+        <nav id="nav" class="flex-1 overflow-y-auto py-2"></nav>
+      </aside>
+
+      <!-- Main content -->
+      <main class="flex flex-1 flex-col overflow-hidden">
+        <header id="page-header" class="flex h-14 items-center border-b border-gray-200 bg-white px-6">
+          <h1 id="page-title" class="text-lg font-semibold">Betöltés...</h1>
+        </header>
+        <div id="page-content" class="flex-1 overflow-y-auto p-6"></div>
+      </main>
+    </div>
     <script type="module" src="/src/renderer/renderer.ts"></script>
   </body>
 </html>
