@@ -5,16 +5,17 @@ Inicializáljon egy zöldmezős Electron asztali alkalmazást az alapítványi t
 
 ## 1. lépés: Scaffold with electron-forge
 - A meglévő `docs/` ideiglenes áthelyezése
-- Futtassa az `npx create-electron-app@latest barbi-szta --template=vite-typescript` parancsot
-- Helyezze vissza a `docs/` fájlt
+- Futtasd az `npx create-electron-app@latest barbi-szta --template=vite-typescript` parancsot
+- Helyezd vissza a `docs/` fájlt
 
 ## 2. lépés: Függőségek telepítése
 - `better-sqlite3` + `@types/better-sqlite3` (adatbázis)
 - "exceljs" (XLSX export)
 - "tailwindcss" + "@tailwindcss/vite" (Tailwind v4)
-- Futtassa az `npx elektron-rebuild -f -w better-sqlite3` parancsot
+- Futtasd az `npx elektron-rebuild -f -w better-sqlite3` parancsot
 
 ## Step 3: Restructure source into domain layout
+Előbb nézd át a struktúrát, hogy megfelel-e a követelményeknek, használd a PRD.md fájlt.
 ```
 src/
 ├── main/               # Electron main process
@@ -42,8 +43,15 @@ src/
 
 ## 5. lépés: Adatbázis réteg
 - `connection.ts`: Singleton, WAL mode, FK enforcement, migration runner, DB stored in `app.getPath('userData')`
-- `schema.ts`: `supporters` table (id, name, address, email, phone, notes, timestamps), `donations` table (id, supporter_id FK, amount, currency, donation_date, payment_method, reference, notes, source, timestamps), `schema_migrations` table
-- `supporters.repo.ts` and `donations.repo.ts`: CRUD queries
+- `schema.ts`: Táblák:
+  - `supporters` (id, name, address, notes, timestamps)
+  - `supporter_emails` (id, supporter_id FK CASCADE, email, is_primary, created_at) — 1:N reláció
+  - `supporter_phones` (id, supporter_id FK CASCADE, phone, is_primary, created_at) — 1:N reláció
+  - `donations` (id, supporter_id FK RESTRICT, amount CHECK > 0, currency, donation_date, payment_method, reference, notes, source, timestamps)
+  - `schema_migrations` (id, version UNIQUE, description, applied_at)
+  - Indexek: supporter_emails(supporter_id, email), supporter_phones(supporter_id, phone), donations(supporter_id, donation_date, reference)
+- `supporters.repo.ts`: CRUD + addEmail/removeEmail/addPhone/removePhone
+- `donations.repo.ts`: CRUD + findBySupporterId/findByDateRange
 
 ## 6. lépés: IPC réteg
 - Typed channel map in `src/shared/types/ipc-channels.ts` — single source of truth
