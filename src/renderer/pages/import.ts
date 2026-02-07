@@ -120,13 +120,24 @@ export async function renderImportPage(container: HTMLElement): Promise<void> {
   updateSummary();
 }
 
+let skippedCount = 0;
+
 async function loadCSV(filePath: string): Promise<void> {
   try {
-    transactions = await window.electronAPI.invoke('import:parseCSV', filePath);
+    const allTransactions = await window.electronAPI.invoke('import:parseCSV', filePath);
     selectedIds.clear();
     supporterAssignments.clear();
 
-    // Auto-select all transactions
+    // Check which transactions are already imported (by reference)
+    const references = allTransactions.map((t) => t.reference).filter((r) => r);
+    const existingRefs = await window.electronAPI.invoke('donations:existingReferences', references);
+    const existingSet = new Set(existingRefs);
+
+    // Filter out already imported transactions
+    transactions = allTransactions.filter((t) => !existingSet.has(t.reference));
+    skippedCount = allTransactions.length - transactions.length;
+
+    // Auto-select all remaining transactions
     for (const t of transactions) {
       selectedIds.add(t.id);
     }
@@ -142,10 +153,11 @@ function renderTable(): void {
   clearElement(tableBody);
 
   if (transactions.length === 0) {
+    const message = skippedCount > 0
+      ? `Minden tranzakció már importálva van (${skippedCount} kihagyva).`
+      : 'A fájl nem tartalmaz importálható tranzakciókat.';
     tableBody.appendChild(el('tr', {}, [
-      el('td', { className: 'px-3 py-8 text-center text-gray-400', colspan: '6' }, [
-        'A fájl nem tartalmaz importálható tranzakciókat.',
-      ]),
+      el('td', { className: 'px-3 py-8 text-center text-gray-400', colspan: '6' }, [message]),
     ]));
     return;
   }
@@ -245,7 +257,11 @@ function updateSummary(): void {
   const totalAmount = selectedTransactions.reduce((sum, t) => sum + t.amount, 0);
   const assignedCount = selectedTransactions.filter((t) => supporterAssignments.has(t.id)).length;
 
-  summaryContainer.textContent = `Kiválasztva: ${selectedTransactions.length} tranzakció, ${formatCurrency(totalAmount, 'HUF')} | Támogatóval: ${assignedCount}`;
+  let text = `Kiválasztva: ${selectedTransactions.length} tranzakció, ${formatCurrency(totalAmount, 'HUF')} | Támogatóval: ${assignedCount}`;
+  if (skippedCount > 0) {
+    text += ` | Már importált: ${skippedCount}`;
+  }
+  summaryContainer.textContent = text;
 
   // Enable import button only if there are selected transactions with assigned supporters
   importBtn.disabled = assignedCount === 0;

@@ -68,6 +68,14 @@ interface ImportResult {
 parseTransactionCSV(filePath: string): ParsedTransaction[]
 ```
 
+**Működés:**
+1. CSV betöltésekor lekérdezi a már létező reference értékeket az adatbázisból
+2. Kiszűri a már importált tranzakciókat a listából
+3. Az összesítőben mutatja: "Már importált: X"
+4. Ha minden tranzakció már importálva van: "Minden tranzakció már importálva van (X kihagyva)"
+
+  Így a felhasználó bármikor újratöltheti a CSV-t és folytathatja az importálást onnan, ahol abbahagyta.
+
 **Logika:**
 1. Fájl beolvasása (UTF-8, lehet BOM)
 2. `;` elválasztó

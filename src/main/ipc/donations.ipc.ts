@@ -29,4 +29,8 @@ export function registerDonationHandlers(): void {
   ipcMain.handle('donations:byDateRange', (_event, input) => {
     return donationsRepo.findByDateRange(input.from, input.to);
   });
+
+  ipcMain.handle('donations:existingReferences', (_event, references: string[]) => {
+    return donationsRepo.findExistingReferences(references);
+  });
 }

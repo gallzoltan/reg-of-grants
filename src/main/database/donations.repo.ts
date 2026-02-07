@@ -128,3 +128,15 @@ export function remove(id: number): void {
   const db = getDatabase();
   db.prepare('DELETE FROM donations WHERE id = ?').run(id);
 }
+
+export function findExistingReferences(references: string[]): string[] {
+  if (references.length === 0) return [];
+
+  const db = getDatabase();
+  const placeholders = references.map(() => '?').join(',');
+  const rows = db
+    .prepare(`SELECT reference FROM donations WHERE reference IN (${placeholders})`)
+    .all(...references) as { reference: string }[];
+
+  return rows.map((r) => r.reference);
+}

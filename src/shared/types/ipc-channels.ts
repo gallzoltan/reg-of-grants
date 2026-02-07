@@ -41,6 +41,7 @@ export interface IpcChannelMap {
     input: { from: string; to: string };
     output: DonationWithSupporter[];
   };
+  'donations:existingReferences': { input: string[]; output: string[] };
 
   'import:selectFile': { input: void; output: string | null };
   'import:parseCSV': { input: string; output: ParsedTransaction[] };
