@@ -18,40 +18,43 @@ A backend kész (DB, repo-k, IPC). Ez a backlog a frontend oldalak implementál�
 
 ### 1.3 — Email/telefon kezelés ✅
 - [x] `form-helpers.ts` bővítés — createContactEditor() (create form), createLiveContactList() (edit form)
-- [ ] `supporters.ts` — email/telefon hozzáadás/törlés/elsődleges a create/edit formban
+- [x] `supporters.ts` — email/telefon hozzáadás/törlés/elsődleges a create/edit formban
 - IPC: `supporters:addEmail`, `supporters:removeEmail`, `supporters:addPhone`, `supporters:removePhone`
 
 ## 2. FÁZIS: Adományok oldal
 
-### 2.1 — Lista + törlés
-- [ ] `src/renderer/pages/donations.ts` — táblázat (támogató, összeg, pénznem, dátum, fizetési mód, hivatkozás)
-- [ ] `formatters.ts` bővítés — formatCurrency()
+### 2.1 — Lista + törlés ✅
+- [x] `src/renderer/pages/donations.ts` — táblázat (támogató, összeg, pénznem, dátum, fizetési mód, hivatkozás)
+- [x] `formatters.ts` bővítés — formatCurrency()
 - IPC: `donations:list`, `donations:delete`
 
-### 2.2 — Létrehozás + szerkesztés
-- [ ] `form-helpers.ts` bővítés — createSelect(), createDateInput(), createNumberInput()
-- [ ] `donations.ts` — modal form (támogató dropdown, összeg, pénznem, dátum, fizetési mód, hivatkozás, megjegyzés)
+### 2.2 — Létrehozás + szerkesztés ✅
+- [x] `form-helpers.ts` bővítés — createSelect(), createDateInput(), createNumberInput()
+- [x] `donations.ts` — modal form (támogató dropdown, összeg, pénznem, dátum, fizetési mód, hivatkozás, megjegyzés)
 - IPC: `donations:create`, `donations:get`, `donations:update`, `supporters:list`
 
-### 2.3 — Szűrés
-- [ ] `donations.ts` — szűrő sáv (támogató + dátum tartomány), összesítő sor
+### 2.3 — Szűrés ✅
+- [x] `donations.ts` — szűrő sáv (támogató + dátum tartomány), összesítő sor
 - IPC: `donations:bySupporter`, `donations:byDateRange`
 
 ## 3. FÁZIS: CSV Import
 
-### 3.1 — CSV feltöltés és megjelenítés
-- [ ] `src/shared/types/import.ts` — ParsedTransaction, TransactionMatch típusok
-- [ ] `src/main/services/csv-parser.ts` — parseCSV()
-- [ ] `src/main/ipc/import.ipc.ts` — import:parseCSV handler
-- [ ] `ipc-channels.ts` bővítés — import csatornák
-- [ ] `main.ts` — import IPC regisztráció
-- [ ] `src/renderer/pages/import.ts` — file input, tranzakciós táblázat
+### 3.1 — CSV feltöltés és megjelenítés ✅
+- [x] `src/shared/types/import.ts` — ParsedTransaction típus
+- [x] `src/main/services/csv-parser.ts` — parseTransactionCSV()
+- [x] `src/main/ipc/import.ipc.ts` — import:selectFile, import:parseCSV handlerek
+- [x] `ipc-channels.ts` bővítés — import csatornák
+- [x] `main.ts` — import IPC regisztráció
+- [x] `src/renderer/pages/import.ts` — file input, tranzakciós táblázat
+- Szűrés: csak "Forint átutalás" és "Elektronikus bankon belüli átutalás", pozitív összegek
 
-### 3.2 — Kiválasztás + drag & drop
-- [ ] `import.ts` — két paneles layout, checkbox + drag&drop, kiválasztott lista
+### 3.2 — Kiválasztás ✅
+- [x] `import.ts` — egyszerű checkbox kiválasztás (drag & drop helyett)
+- [x] Összes kijelölése / törlése gombok
 
-### 3.3 — Párosítás + importálás
-- [ ] `import.ts` — támogató select per tranzakció, új támogató inline, importálás gomb
+### 3.3 — Párosítás + importálás ✅
+- [x] `import.ts` — támogató dropdown soronként, "Új támogató..." opció inline modal-lal
+- [x] Importálás gomb: donations:create hívás minden kijelölt+hozzárendelt sorra
 - IPC: `supporters:list`, `supporters:create`, `donations:create`
 
 ## 4. FÁZIS: Export

@@ -36,6 +36,65 @@ export function createTextarea(id: string, opts?: { value?: string; rows?: strin
   return textarea;
 }
 
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
+export function createSelect(id: string, options: SelectOption[], opts?: { value?: string; required?: boolean; placeholder?: string }): HTMLSelectElement {
+  const select = el('select', {
+    id,
+    className: inputClasses,
+  }) as HTMLSelectElement;
+
+  if (opts?.placeholder) {
+    const placeholderOpt = el('option', { value: '' }, [opts.placeholder]) as HTMLOptionElement;
+    placeholderOpt.disabled = true;
+    placeholderOpt.selected = true;
+    select.appendChild(placeholderOpt);
+  }
+
+  for (const opt of options) {
+    const optionEl = el('option', { value: opt.value }, [opt.label]) as HTMLOptionElement;
+    if (opts?.value && opt.value === opts.value) {
+      optionEl.selected = true;
+    }
+    select.appendChild(optionEl);
+  }
+
+  if (opts?.required) select.required = true;
+
+  return select;
+}
+
+export function createDateInput(id: string, opts?: { value?: string; required?: boolean }): HTMLInputElement {
+  const input = el('input', {
+    id,
+    type: 'date',
+    className: inputClasses,
+  }) as HTMLInputElement;
+
+  if (opts?.value) input.value = opts.value;
+  if (opts?.required) input.required = true;
+
+  return input;
+}
+
+export function createNumberInput(id: string, opts?: { value?: number; required?: boolean; min?: number; step?: number }): HTMLInputElement {
+  const input = el('input', {
+    id,
+    type: 'number',
+    className: inputClasses,
+  }) as HTMLInputElement;
+
+  if (opts?.value !== undefined) input.value = String(opts.value);
+  if (opts?.required) input.required = true;
+  if (opts?.min !== undefined) input.min = String(opts.min);
+  if (opts?.step !== undefined) input.step = String(opts.step);
+
+  return input;
+}
+
 // ── Contact list (in-memory, for create forms) ──
 
 export interface ContactEntry {

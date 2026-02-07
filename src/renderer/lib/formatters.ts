@@ -23,3 +23,8 @@ export function formatPhoneList(phones: SupporterPhone[]): string {
     .map((p) => p.phone)
     .join(', ');
 }
+
+export function formatCurrency(amount: number, currency: string): string {
+  const formatted = amount.toLocaleString('hu-HU');
+  return `${formatted} ${currency}`;
+}

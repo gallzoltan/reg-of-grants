@@ -12,6 +12,7 @@ import type {
   CreateDonationInput,
   UpdateDonationInput,
 } from './donation';
+import type { ParsedTransaction } from './import';
 
 export interface IpcChannelMap {
   'supporters:create': { input: CreateSupporterInput; output: SupporterWithContacts };
@@ -40,6 +41,9 @@ export interface IpcChannelMap {
     input: { from: string; to: string };
     output: DonationWithSupporter[];
   };
+
+  'import:selectFile': { input: void; output: string | null };
+  'import:parseCSV': { input: string; output: ParsedTransaction[] };
 }
 
 export type IpcChannel = keyof IpcChannelMap;

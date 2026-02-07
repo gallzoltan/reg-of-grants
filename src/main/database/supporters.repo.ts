@@ -69,7 +69,11 @@ export function create(input: CreateSupporterInput): SupporterWithContacts {
   });
 
   const supporterId = transaction();
-  return findById(supporterId)!;
+  const supporter = findById(supporterId);
+  if (!supporter) {
+    throw new Error(`Supporter with id ${supporterId} not found after creation.`);
+  }
+  return supporter;
 }
 
 export function findById(id: number): SupporterWithContacts | null {
@@ -109,7 +113,11 @@ export function update(input: UpdateSupporterInput): Supporter {
   }
 
   if (fields.length === 0) {
-    return findById(input.id)! as Supporter;
+    const supporter = findById(input.id);
+    if (!supporter) {
+      throw new Error(`Supporter with id ${input.id} not found.`);
+    }
+    return supporter as Supporter;
   }
 
   fields.push("updated_at = datetime('now')");

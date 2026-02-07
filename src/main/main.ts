@@ -4,6 +4,7 @@ import started from 'electron-squirrel-startup';
 import { getDatabase, closeDatabase } from './database/connection';
 import { registerSupporterHandlers } from './ipc/supporters.ipc';
 import { registerDonationHandlers } from './ipc/donations.ipc';
+import { registerImportHandlers } from './ipc/import.ipc';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -35,6 +36,7 @@ app.on('ready', () => {
   getDatabase();
   registerSupporterHandlers();
   registerDonationHandlers();
+  registerImportHandlers();
   createWindow();
 });
 
