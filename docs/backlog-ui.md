@@ -78,4 +78,4 @@ A backend kész (DB, repo-k, IPC). Ez a backlog a frontend oldalak implementál�
 - [x] `src/renderer/pages/reports.ts` — összes támogató, összes adomány, összesített összeg, legutóbbi
 
 ### 5.2 — Top lista + megoszlás
-- [ ] `reports.ts` — Top 10 támogató összeg szerint, fizetési módok megoszlása
+- [x] `reports.ts` — Top 10 támogató összeg szerint, fizetési módok megoszlása

@@ -42,13 +42,42 @@ const config: ForgeConfig = {
     asar: {
       unpack: '**/*.node',
     },
+    executableName: 'tamogatas-nyilvantarto',
   },
   rebuildConfig: {},
   makers: [
-    new MakerSquirrel({}),
+    new MakerSquirrel({
+      authors: 'Gáll Zoltán',
+      description: 'Támogatás nyilvántartó - Alapítványi adományok kezelése',
+    }),
     new MakerZIP({}, ['darwin']),
-    new MakerRpm({}),
-    new MakerDeb({}),
+    new MakerRpm({
+      options: {
+        name: 'tamogatas-nyilvantarto',
+        bin: 'tamogatas-nyilvantarto',
+        productName: 'Támogatás nyilvántartó',
+        genericName: 'Donation Tracker',
+        description: 'Alapítványi támogatók és adományok nyilvántartása',
+        productDescription: 'Asztali alkalmazás alapítványi támogatók és adományok nyilvántartásához. Banki CSV import, CSV/XLSX export, statisztikák.',
+        categories: ['Office', 'Utility'],
+        homepage: 'https://github.com/gallz/reg-of-grants',
+        license: 'MIT',
+      },
+    }),
+    new MakerDeb({
+      options: {
+        name: 'tamogatas-nyilvantarto',
+        bin: 'tamogatas-nyilvantarto',
+        productName: 'Támogatás nyilvántartó',
+        genericName: 'Donation Tracker',
+        description: 'Alapítványi támogatók és adományok nyilvántartása',
+        productDescription: 'Asztali alkalmazás alapítványi támogatók és adományok nyilvántartásához. Banki CSV import, CSV/XLSX export, statisztikák.',
+        section: 'utils',
+        categories: ['Office', 'Utility'],
+        maintainer: 'Gáll Zoltán',
+        homepage: 'https://github.com/gallz/reg-of-grants',
+      },
+    }),
   ],
   plugins: [
     new AutoUnpackNativesPlugin({}),

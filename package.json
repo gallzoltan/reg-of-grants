@@ -1,8 +1,9 @@
 {
   "name": "barbi-szta",
-  "productName": "barbi-szta",
+  "productName": "Támogatás nyilvántartó",
   "version": "1.0.0",
   "description": "Támogatás nyilvántartó - Foundation donation tracker",
+  "author": "Gáll Zoltán",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "ELECTRON_DISABLE_SANDBOX=true electron-forge start",
