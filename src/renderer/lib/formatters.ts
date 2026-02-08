@@ -24,6 +24,12 @@ export function formatPhoneList(phones: SupporterPhone[]): string {
     .join(', ');
 }
 
+export function toTitleCase(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/(^|\s|-)\S/g, (ch) => ch.toUpperCase());
+}
+
 export function formatCurrency(amount: number, currency: string): string {
   const formatted = amount.toLocaleString('hu-HU');
   return `${formatted} ${currency}`;

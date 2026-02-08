@@ -1,7 +1,7 @@
 import type { ParsedTransaction } from '@shared/types/import';
 import type { Supporter } from '@shared/types/supporter';
 import { el, clearElement, showError } from '../lib/dom-helpers';
-import { formatDate, formatCurrency } from '../lib/formatters';
+import { formatDate, formatCurrency, toTitleCase } from '../lib/formatters';
 import { showModal, hideModal } from '../components/modal';
 import { createTextInput, createFormGroup, createFormButtons } from '../components/form-helpers';
 
@@ -95,7 +95,7 @@ export async function renderImportPage(container: HTMLElement): Promise<void> {
   }, ['Importálás indítása']) as HTMLButtonElement;
   importBtn.addEventListener('click', () => startImport());
 
-  const bottomBar = el('div', { className: 'mt-4 flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3' }, [
+  const summaryBar = el('div', { className: 'mb-4 flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3' }, [
     summaryContainer,
     importBtn,
   ]);
@@ -106,9 +106,9 @@ export async function renderImportPage(container: HTMLElement): Promise<void> {
   ]);
 
   container.appendChild(fileSection);
+  container.appendChild(summaryBar);
   container.appendChild(tableWrapper);
   container.appendChild(selectionControls);
-  container.appendChild(bottomBar);
 
   tableBody = document.getElementById('import-table-body') as HTMLTableSectionElement;
   tableBody.appendChild(el('tr', {}, [
@@ -136,11 +136,6 @@ async function loadCSV(filePath: string): Promise<void> {
     // Filter out already imported transactions
     transactions = allTransactions.filter((t) => !existingSet.has(t.reference));
     skippedCount = allTransactions.length - transactions.length;
-
-    // Auto-select all remaining transactions
-    for (const t of transactions) {
-      selectedIds.add(t.id);
-    }
 
     renderTable();
     updateSummary();
@@ -271,7 +266,7 @@ async function openNewSupporterModal(hintName: string): Promise<Supporter | null
   return new Promise((resolve) => {
     const nameInput = createTextInput('new-supporter-name', {
       required: true,
-      value: hintName,
+      value: toTitleCase(hintName),
       placeholder: 'Támogató neve',
     });
 
