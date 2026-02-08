@@ -5,6 +5,7 @@ import { getDatabase, closeDatabase } from './database/connection';
 import { registerSupporterHandlers } from './ipc/supporters.ipc';
 import { registerDonationHandlers } from './ipc/donations.ipc';
 import { registerImportHandlers } from './ipc/import.ipc';
+import { registerExportHandlers } from './ipc/export.ipc';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -37,6 +38,7 @@ app.on('ready', () => {
   registerSupporterHandlers();
   registerDonationHandlers();
   registerImportHandlers();
+  registerExportHandlers();
   createWindow();
 });
 
