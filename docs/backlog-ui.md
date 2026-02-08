@@ -60,22 +60,22 @@ A backend kész (DB, repo-k, IPC). Ez a backlog a frontend oldalak implementál�
 ## 4. FÁZIS: Export
 
 ### 4.1 — CSV export
-- [ ] `src/shared/types/export.ts` — ExportOptions típus
-- [ ] `src/main/services/csv-export.ts` — exportToCSV() (UTF-8 BOM)
-- [ ] `src/main/ipc/export.ipc.ts` — export:csv handler
-- [ ] `ipc-channels.ts` bővítés — export csatornák
-- [ ] `main.ts` — export IPC regisztráció
-- [ ] `src/renderer/pages/export.ts` — dátum tartomány form, Electron save dialog
+- [x] `src/shared/types/export.ts` — ExportOptions típus
+- [x] `src/main/services/csv-export.ts` — exportToCSV() (UTF-8 BOM)
+- [x] `src/main/ipc/export.ipc.ts` — export:csv handler
+- [x] `ipc-channels.ts` bővítés — export csatornák
+- [x] `main.ts` — export IPC regisztráció
+- [x] `src/renderer/pages/export.ts` — dátum tartomány form, Electron save dialog
 
 ### 4.2 — XLSX export
-- [ ] `src/main/services/xlsx-export.ts` — ExcelJS workbook, formázott fejléc, oszlopszélességek
-- [ ] `export.ipc.ts` bővítés — export:xlsx handler
+- [x] `src/main/services/xlsx-export.ts` — ExcelJS workbook, formázott fejléc, oszlopszélességek
+- [x] `export.ipc.ts` bővítés — export:xlsx handler
 
 ## 5. FÁZIS: Jelentések
 
 ### 5.1 — Statisztika kártyák
-- [ ] `src/renderer/components/stat-card.ts` — createStatCard()
-- [ ] `src/renderer/pages/reports.ts` — összes támogató, összes adomány, összesített összeg, legutóbbi
+- [x] `src/renderer/components/stat-card.ts` — createStatCard()
+- [x] `src/renderer/pages/reports.ts` — összes támogató, összes adomány, összesített összeg, legutóbbi
 
 ### 5.2 — Top lista + megoszlás
 - [ ] `reports.ts` — Top 10 támogató összeg szerint, fizetési módok megoszlása
