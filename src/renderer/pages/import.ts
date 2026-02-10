@@ -3,7 +3,7 @@ import type { Supporter } from '@shared/types/supporter';
 import { el, clearElement, showError } from '../lib/dom-helpers';
 import { formatDate, formatCurrency, toTitleCase } from '../lib/formatters';
 import { showModal, hideModal } from '../components/modal';
-import { createTextInput, createFormGroup, createFormButtons } from '../components/form-helpers';
+import { createTextInput, createFormGroup, createFormButtons, createSearchableSelect, SelectOption } from '../components/form-helpers';
 
 let pageContainer: HTMLElement;
 let tableBody: HTMLTableSectionElement;
@@ -11,7 +11,6 @@ let summaryContainer: HTMLElement;
 let importBtn: HTMLButtonElement;
 let transactions: ParsedTransaction[] = [];
 let supporters: Supporter[] = [];
-let selectedIds: Set<string> = new Set();
 let supporterAssignments: Map<string, number> = new Map();
 
 export async function renderImportPage(container: HTMLElement): Promise<void> {
@@ -57,7 +56,6 @@ export async function renderImportPage(container: HTMLElement): Promise<void> {
   const table = el('table', { className: 'w-full border-collapse text-sm' }, [
     el('thead', {}, [
       el('tr', { className: 'border-b border-gray-200 text-left text-xs font-medium uppercase tracking-wider text-gray-500' }, [
-        el('th', { className: 'px-3 py-3 w-10' }, []),
         el('th', { className: 'px-3 py-3' }, ['Dátum']),
         el('th', { className: 'px-3 py-3 text-right' }, ['Összeg']),
         el('th', { className: 'px-3 py-3' }, ['Név (hint)']),
@@ -69,21 +67,6 @@ export async function renderImportPage(container: HTMLElement): Promise<void> {
   ]);
 
   const tableWrapper = el('div', { className: 'overflow-x-auto rounded-lg border border-gray-200 bg-white' }, [table]);
-
-  // Selection controls
-  const selectAllBtn = el('button', {
-    type: 'button',
-    className: 'rounded px-3 py-1 text-sm text-blue-600 transition-colors hover:bg-blue-50',
-  }, ['Összes kijelölése']);
-  selectAllBtn.addEventListener('click', () => selectAll());
-
-  const deselectAllBtn = el('button', {
-    type: 'button',
-    className: 'rounded px-3 py-1 text-sm text-gray-600 transition-colors hover:bg-gray-100',
-  }, ['Kijelölés törlése']);
-  deselectAllBtn.addEventListener('click', () => deselectAll());
-
-  const selectionControls = el('div', { className: 'mt-3 flex gap-2' }, [selectAllBtn, deselectAllBtn]);
 
   // Summary and import button
   summaryContainer = el('div', { className: 'flex-1 text-sm text-gray-700' });
@@ -108,11 +91,10 @@ export async function renderImportPage(container: HTMLElement): Promise<void> {
   container.appendChild(fileSection);
   container.appendChild(summaryBar);
   container.appendChild(tableWrapper);
-  container.appendChild(selectionControls);
 
   tableBody = document.getElementById('import-table-body') as HTMLTableSectionElement;
   tableBody.appendChild(el('tr', {}, [
-    el('td', { className: 'px-3 py-8 text-center text-gray-400', colspan: '6' }, [
+    el('td', { className: 'px-3 py-8 text-center text-gray-400', colspan: '5' }, [
       'Válassz ki egy CSV fájlt a tranzakciók betöltéséhez.',
     ]),
   ]));
@@ -125,7 +107,6 @@ let skippedCount = 0;
 async function loadCSV(filePath: string): Promise<void> {
   try {
     const allTransactions = await window.electronAPI.invoke('import:parseCSV', filePath);
-    selectedIds.clear();
     supporterAssignments.clear();
 
     // Check which transactions are already imported (by reference)
@@ -152,7 +133,7 @@ function renderTable(): void {
       ? `Minden tranzakció már importálva van (${skippedCount} kihagyva).`
       : 'A fájl nem tartalmaz importálható tranzakciókat.';
     tableBody.appendChild(el('tr', {}, [
-      el('td', { className: 'px-3 py-8 text-center text-gray-400', colspan: '6' }, [message]),
+      el('td', { className: 'px-3 py-8 text-center text-gray-400', colspan: '5' }, [message]),
     ]));
     return;
   }
@@ -163,58 +144,30 @@ function renderTable(): void {
 }
 
 function createTransactionRow(t: ParsedTransaction): HTMLTableRowElement {
-  const checkbox = el('input', {
-    type: 'checkbox',
-    className: 'h-4 w-4 rounded border-gray-300',
-  }) as HTMLInputElement;
-  checkbox.checked = selectedIds.has(t.id);
-  checkbox.addEventListener('change', () => {
-    if (checkbox.checked) {
-      selectedIds.add(t.id);
-    } else {
-      selectedIds.delete(t.id);
-    }
-    updateSummary();
+  // Supporter searchable select
+  const supporterOptions: SelectOption[] = [
+    { value: '__new__', label: '+ Új támogató...' },
+    ...supporters.map((s) => ({ value: String(s.id), label: s.name })),
+  ];
+
+  const prevAssignment = supporterAssignments.get(t.id);
+  const supporterCombobox = createSearchableSelect('import-supporter-' + t.id, supporterOptions, {
+    placeholder: 'Válassz támogatót...',
+    ...(prevAssignment ? { value: String(prevAssignment) } : {}),
   });
 
-  // Supporter select
-  const supporterSelect = el('select', {
-    className: 'w-full rounded border border-gray-300 px-2 py-1 text-sm',
-  }) as HTMLSelectElement;
-
-  // Add placeholder option
-  const placeholderOpt = el('option', { value: '' }, ['Válassz támogatót...']) as HTMLOptionElement;
-  supporterSelect.appendChild(placeholderOpt);
-
-  // Add "New supporter" option
-  const newOpt = el('option', { value: '__new__' }, ['+ Új támogató...']) as HTMLOptionElement;
-  supporterSelect.appendChild(newOpt);
-
-  // Add existing supporters
-  for (const s of supporters) {
-    const opt = el('option', { value: String(s.id) }, [s.name]) as HTMLOptionElement;
-    supporterSelect.appendChild(opt);
-  }
-
-  // Restore previous selection if any
-  const prevAssignment = supporterAssignments.get(t.id);
-  if (prevAssignment) {
-    supporterSelect.value = String(prevAssignment);
-  }
-
-  supporterSelect.addEventListener('change', async () => {
-    if (supporterSelect.value === '__new__') {
+  supporterCombobox.onChange(async () => {
+    if (supporterCombobox.value === '__new__') {
       const newSupporter = await openNewSupporterModal(t.supporterHint);
       if (newSupporter) {
         supporters.push(newSupporter);
-        // Add new option to all selects would be complex, so just re-render
         supporterAssignments.set(t.id, newSupporter.id);
         renderTable();
       } else {
-        supporterSelect.value = '';
+        supporterCombobox.value = '';
       }
-    } else if (supporterSelect.value) {
-      supporterAssignments.set(t.id, Number(supporterSelect.value));
+    } else if (supporterCombobox.value) {
+      supporterAssignments.set(t.id, Number(supporterCombobox.value));
     } else {
       supporterAssignments.delete(t.id);
     }
@@ -224,42 +177,28 @@ function createTransactionRow(t: ParsedTransaction): HTMLTableRowElement {
   const notesDisplay = t.notes.length > 30 ? t.notes.substring(0, 30) + '...' : (t.notes || '—');
 
   return el('tr', { className: 'hover:bg-gray-50 transition-colors' }, [
-    el('td', { className: 'px-3 py-2' }, [checkbox]),
     el('td', { className: 'px-3 py-2 text-gray-600' }, [formatDate(t.date)]),
     el('td', { className: 'px-3 py-2 text-right font-medium text-gray-900' }, [formatCurrency(t.amount, 'HUF')]),
     el('td', { className: 'px-3 py-2 text-gray-900' }, [t.supporterHint || '—']),
     el('td', { className: 'px-3 py-2 text-gray-500 text-xs', title: t.notes }, [notesDisplay]),
-    el('td', { className: 'px-3 py-2' }, [supporterSelect]),
+    el('td', { className: 'px-3 py-2' }, [supporterCombobox.element]),
   ]) as HTMLTableRowElement;
 }
 
-function selectAll(): void {
-  for (const t of transactions) {
-    selectedIds.add(t.id);
-  }
-  renderTable();
-  updateSummary();
-}
-
-function deselectAll(): void {
-  selectedIds.clear();
-  renderTable();
-  updateSummary();
-}
-
 function updateSummary(): void {
-  const selectedTransactions = transactions.filter((t) => selectedIds.has(t.id));
-  const totalAmount = selectedTransactions.reduce((sum, t) => sum + t.amount, 0);
-  const assignedCount = selectedTransactions.filter((t) => supporterAssignments.has(t.id)).length;
+  const assignedTransactions = transactions.filter((t) => supporterAssignments.has(t.id));
+  const totalAmount = assignedTransactions.reduce((sum, t) => sum + t.amount, 0);
 
-  let text = `Kiválasztva: ${selectedTransactions.length} tranzakció, ${formatCurrency(totalAmount, 'HUF')} | Támogatóval: ${assignedCount}`;
+  let text = `Tranzakciók: ${transactions.length}`;
+  if (assignedTransactions.length > 0) {
+    text += ` | Importálandó: ${assignedTransactions.length}, ${formatCurrency(totalAmount, 'HUF')}`;
+  }
   if (skippedCount > 0) {
     text += ` | Már importált: ${skippedCount}`;
   }
   summaryContainer.textContent = text;
 
-  // Enable import button only if there are selected transactions with assigned supporters
-  importBtn.disabled = assignedCount === 0;
+  importBtn.disabled = assignedTransactions.length === 0;
 }
 
 async function openNewSupporterModal(hintName: string): Promise<Supporter | null> {
@@ -305,10 +244,10 @@ async function openNewSupporterModal(hintName: string): Promise<Supporter | null
 }
 
 async function startImport(): Promise<void> {
-  const toImport = transactions.filter((t) => selectedIds.has(t.id) && supporterAssignments.has(t.id));
+  const toImport = transactions.filter((t) => supporterAssignments.has(t.id));
 
   if (toImport.length === 0) {
-    alert('Nincs importálható tranzakció (válassz ki tranzakciókat és rendelj hozzájuk támogatókat).');
+    alert('Nincs importálható tranzakció. Rendelj támogatókat a tranzakciókhoz.');
     return;
   }
 
@@ -337,7 +276,6 @@ async function startImport(): Promise<void> {
       successCount++;
 
       // Remove from the list after successful import
-      selectedIds.delete(t.id);
       supporterAssignments.delete(t.id);
     } catch (error) {
       errorCount++;

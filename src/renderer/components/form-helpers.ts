@@ -67,6 +67,209 @@ export function createSelect(id: string, options: SelectOption[], opts?: { value
   return select;
 }
 
+// ── Searchable combobox ──
+
+export interface SearchableSelect {
+  element: HTMLElement;
+  get value(): string;
+  set value(val: string);
+  onChange(cb: () => void): void;
+}
+
+export function createSearchableSelect(
+  id: string,
+  options: SelectOption[],
+  opts?: { value?: string; required?: boolean; placeholder?: string }
+): SearchableSelect {
+  const wrapper = el('div', { className: 'relative' });
+  const input = el('input', {
+    id,
+    type: 'text',
+    className: inputClasses + ' pr-8',
+    autocomplete: 'off',
+  }) as HTMLInputElement;
+  if (opts?.placeholder) input.placeholder = opts.placeholder;
+  if (opts?.required) input.setAttribute('data-required', 'true');
+
+  const chevron = el('span', {
+    className: 'pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs',
+  }, ['\u25BC']);
+
+  const dropdown = el('ul', {
+    className: 'absolute z-[60] hidden w-full mt-1 max-h-48 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg',
+  });
+
+  wrapper.appendChild(input);
+  wrapper.appendChild(chevron);
+  wrapper.appendChild(dropdown);
+
+  let selectedValue = '';
+  let highlightIndex = -1;
+  let filteredOptions: SelectOption[] = [];
+  let isOpen = false;
+  let changeCallback: (() => void) | null = null;
+  // Track whether this is the initial focus (for edit modals with pre-selected value)
+  let hadInitialValue = false;
+  let firstFocusDone = false;
+
+  function setSelected(val: string, triggerChange = true): void {
+    selectedValue = val;
+    const found = options.find((o) => o.value === val);
+    input.value = found ? found.label : '';
+    if (triggerChange && changeCallback) changeCallback();
+  }
+
+  // Set initial value if provided
+  if (opts?.value) {
+    setSelected(opts.value, false);
+    hadInitialValue = true;
+  }
+
+  function renderDropdown(filter: string): void {
+    dropdown.innerHTML = '';
+    const lowerFilter = filter.toLowerCase();
+    filteredOptions = filter
+      ? options.filter((o) => o.label.toLowerCase().includes(lowerFilter))
+      : options;
+    highlightIndex = -1;
+
+    if (filteredOptions.length === 0) {
+      const noResult = el('li', {
+        className: 'px-3 py-2 text-sm italic text-gray-400',
+      }, ['Nincs találat']);
+      dropdown.appendChild(noResult);
+      return;
+    }
+
+    filteredOptions.forEach((opt, i) => {
+      const li = el('li', {
+        className: 'cursor-pointer px-3 py-2 text-sm hover:bg-blue-50 transition-colors'
+          + (opt.value === selectedValue ? ' bg-blue-50 font-medium text-blue-700' : ' text-gray-700'),
+      }, [opt.label]);
+
+      li.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // prevent blur before click registers
+      });
+      li.addEventListener('click', () => {
+        setSelected(opt.value);
+        close();
+      });
+      li.dataset.index = String(i);
+      dropdown.appendChild(li);
+    });
+  }
+
+  function updateHighlight(): void {
+    const items = dropdown.querySelectorAll('li[data-index]');
+    items.forEach((item, i) => {
+      if (i === highlightIndex) {
+        item.classList.add('bg-blue-100');
+        item.scrollIntoView({ block: 'nearest' });
+      } else {
+        item.classList.remove('bg-blue-100');
+      }
+    });
+  }
+
+  function open(): void {
+    if (isOpen) return;
+    isOpen = true;
+    renderDropdown(input.value === getSelectedLabel() ? '' : input.value);
+    dropdown.classList.remove('hidden');
+    document.addEventListener('mousedown', onDocumentMousedown);
+  }
+
+  function close(): void {
+    if (!isOpen) return;
+    isOpen = false;
+    dropdown.classList.add('hidden');
+    highlightIndex = -1;
+    document.removeEventListener('mousedown', onDocumentMousedown);
+    // Restore display text to selected option
+    const found = options.find((o) => o.value === selectedValue);
+    input.value = found ? found.label : '';
+  }
+
+  function getSelectedLabel(): string {
+    const found = options.find((o) => o.value === selectedValue);
+    return found ? found.label : '';
+  }
+
+  function onDocumentMousedown(e: MouseEvent): void {
+    if (!wrapper.contains(e.target as Node)) {
+      close();
+    }
+  }
+
+  input.addEventListener('focus', () => {
+    // For edit modal: skip auto-open on first focus when there's a pre-selected value
+    if (hadInitialValue && !firstFocusDone) {
+      firstFocusDone = true;
+      return;
+    }
+    open();
+    input.select();
+  });
+
+  input.addEventListener('click', () => {
+    if (!isOpen) {
+      open();
+      input.select();
+    }
+  });
+
+  input.addEventListener('input', () => {
+    if (!isOpen) open();
+    renderDropdown(input.value);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!isOpen) open();
+      if (highlightIndex < filteredOptions.length - 1) {
+        highlightIndex++;
+        updateHighlight();
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (highlightIndex > 0) {
+        highlightIndex--;
+        updateHighlight();
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (isOpen && highlightIndex >= 0 && highlightIndex < filteredOptions.length) {
+        setSelected(filteredOptions[highlightIndex].value);
+        close();
+      }
+    } else if (e.key === 'Escape') {
+      if (isOpen) {
+        e.stopPropagation(); // don't close the modal
+        close();
+      }
+    } else if (e.key === 'Tab') {
+      close();
+    }
+  });
+
+  return {
+    element: wrapper,
+    get value(): string {
+      return selectedValue;
+    },
+    set value(val: string) {
+      setSelected(val, false);
+      // Reset initial-focus guard so it works fresh
+      hadInitialValue = !!val;
+      firstFocusDone = false;
+    },
+    onChange(cb: () => void): void {
+      changeCallback = cb;
+    },
+  };
+}
+
 export function createDateInput(id: string, opts?: { value?: string; required?: boolean }): HTMLInputElement {
   const input = el('input', {
     id,
