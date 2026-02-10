@@ -3,7 +3,7 @@ import type { Supporter } from '@shared/types/supporter';
 import { el, clearElement, showError } from '../lib/dom-helpers';
 import { formatDate, formatCurrency, toTitleCase } from '../lib/formatters';
 import { showModal, hideModal } from '../components/modal';
-import { createTextInput, createFormGroup, createFormButtons } from '../components/form-helpers';
+import { createTextInput, createFormGroup, createFormButtons, createSearchableSelect, SelectOption } from '../components/form-helpers';
 
 let pageContainer: HTMLElement;
 let tableBody: HTMLTableSectionElement;
@@ -177,44 +177,30 @@ function createTransactionRow(t: ParsedTransaction): HTMLTableRowElement {
     updateSummary();
   });
 
-  // Supporter select
-  const supporterSelect = el('select', {
-    className: 'w-full rounded border border-gray-300 px-2 py-1 text-sm',
-  }) as HTMLSelectElement;
+  // Supporter searchable select
+  const supporterOptions: SelectOption[] = [
+    { value: '__new__', label: '+ Új támogató...' },
+    ...supporters.map((s) => ({ value: String(s.id), label: s.name })),
+  ];
 
-  // Add placeholder option
-  const placeholderOpt = el('option', { value: '' }, ['Válassz támogatót...']) as HTMLOptionElement;
-  supporterSelect.appendChild(placeholderOpt);
-
-  // Add "New supporter" option
-  const newOpt = el('option', { value: '__new__' }, ['+ Új támogató...']) as HTMLOptionElement;
-  supporterSelect.appendChild(newOpt);
-
-  // Add existing supporters
-  for (const s of supporters) {
-    const opt = el('option', { value: String(s.id) }, [s.name]) as HTMLOptionElement;
-    supporterSelect.appendChild(opt);
-  }
-
-  // Restore previous selection if any
   const prevAssignment = supporterAssignments.get(t.id);
-  if (prevAssignment) {
-    supporterSelect.value = String(prevAssignment);
-  }
+  const supporterCombobox = createSearchableSelect('import-supporter-' + t.id, supporterOptions, {
+    placeholder: 'Válassz támogatót...',
+    ...(prevAssignment ? { value: String(prevAssignment) } : {}),
+  });
 
-  supporterSelect.addEventListener('change', async () => {
-    if (supporterSelect.value === '__new__') {
+  supporterCombobox.onChange(async () => {
+    if (supporterCombobox.value === '__new__') {
       const newSupporter = await openNewSupporterModal(t.supporterHint);
       if (newSupporter) {
         supporters.push(newSupporter);
-        // Add new option to all selects would be complex, so just re-render
         supporterAssignments.set(t.id, newSupporter.id);
         renderTable();
       } else {
-        supporterSelect.value = '';
+        supporterCombobox.value = '';
       }
-    } else if (supporterSelect.value) {
-      supporterAssignments.set(t.id, Number(supporterSelect.value));
+    } else if (supporterCombobox.value) {
+      supporterAssignments.set(t.id, Number(supporterCombobox.value));
     } else {
       supporterAssignments.delete(t.id);
     }
@@ -229,7 +215,7 @@ function createTransactionRow(t: ParsedTransaction): HTMLTableRowElement {
     el('td', { className: 'px-3 py-2 text-right font-medium text-gray-900' }, [formatCurrency(t.amount, 'HUF')]),
     el('td', { className: 'px-3 py-2 text-gray-900' }, [t.supporterHint || '—']),
     el('td', { className: 'px-3 py-2 text-gray-500 text-xs', title: t.notes }, [notesDisplay]),
-    el('td', { className: 'px-3 py-2' }, [supporterSelect]),
+    el('td', { className: 'px-3 py-2' }, [supporterCombobox.element]),
   ]) as HTMLTableRowElement;
 }
 

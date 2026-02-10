@@ -9,15 +9,17 @@ import {
   createFormGroup,
   createFormButtons,
   createSelect,
+  createSearchableSelect,
   createDateInput,
   createNumberInput,
   SelectOption,
+  SearchableSelect,
 } from '../components/form-helpers';
 
 let pageContainer: HTMLElement;
 let tableBody: HTMLTableSectionElement;
 let summaryContainer: HTMLElement;
-let filterSupporterSelect: HTMLSelectElement;
+let filterSupporterCombobox: SearchableSelect;
 let filterFromInput: HTMLInputElement;
 let filterToInput: HTMLInputElement;
 let supportersCache: Supporter[] = [];
@@ -52,7 +54,7 @@ export async function renderDonationsPage(container: HTMLElement): Promise<void>
     label: s.name,
   }));
 
-  filterSupporterSelect = createSelect('filter-supporter', [{ value: '', label: 'Összes támogató' }, ...supporterOptions]);
+  filterSupporterCombobox = createSearchableSelect('filter-supporter', [{ value: '', label: 'Összes támogató' }, ...supporterOptions], { placeholder: 'Összes támogató' });
   filterFromInput = createDateInput('filter-from');
   filterToInput = createDateInput('filter-to');
 
@@ -71,7 +73,7 @@ export async function renderDonationsPage(container: HTMLElement): Promise<void>
   const filterBar = el('div', { className: 'mb-4 flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4' }, [
     el('div', { className: 'flex flex-col gap-1' }, [
       el('label', { className: 'text-xs font-medium text-gray-600' }, ['Támogató']),
-      filterSupporterSelect,
+      filterSupporterCombobox.element,
     ]),
     el('div', { className: 'flex flex-col gap-1' }, [
       el('label', { className: 'text-xs font-medium text-gray-600' }, ['Dátum-tól']),
@@ -139,7 +141,7 @@ async function loadDonations(): Promise<void> {
 }
 
 async function applyFilter(): Promise<void> {
-  const supporterId = filterSupporterSelect.value;
+  const supporterId = filterSupporterCombobox.value;
   const fromDate = filterFromInput.value;
   const toDate = filterToInput.value;
 
@@ -174,7 +176,7 @@ async function applyFilter(): Promise<void> {
 }
 
 function clearFilter(): void {
-  filterSupporterSelect.value = '';
+  filterSupporterCombobox.value = '';
   filterFromInput.value = '';
   filterToInput.value = '';
   loadDonations();
@@ -248,7 +250,7 @@ function openCreateModal(): void {
     label: s.name,
   }));
 
-  const supporterSelect = createSelect('donation-supporter', supporterOptions, { required: true, placeholder: 'Válassz támogatót...' });
+  const supporterCombobox = createSearchableSelect('donation-supporter', supporterOptions, { required: true, placeholder: 'Válassz támogatót...' });
   const amountInput = createNumberInput('donation-amount', { required: true, min: 0, step: 1 });
   const currencySelect = createSelect('donation-currency', CURRENCY_OPTIONS, { value: 'HUF' });
   const dateInput = createDateInput('donation-date', { required: true, value: new Date().toISOString().split('T')[0] });
@@ -260,7 +262,7 @@ function openCreateModal(): void {
 
   const form = el('form', {}, [
     errorDiv,
-    createFormGroup('Támogató *', supporterSelect, 'donation-supporter'),
+    createFormGroup('Támogató *', supporterCombobox.element, 'donation-supporter'),
     el('div', { className: 'flex gap-4' }, [
       el('div', { className: 'flex-1' }, [createFormGroup('Összeg *', amountInput, 'donation-amount')]),
       el('div', { className: 'w-24' }, [createFormGroup('Pénznem', currencySelect, 'donation-currency')]),
@@ -275,7 +277,7 @@ function openCreateModal(): void {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const supporterId = supporterSelect.value;
+    const supporterId = supporterCombobox.value;
     const amount = amountInput.value;
     const date = dateInput.value;
 
@@ -318,7 +320,7 @@ async function openEditModal(id: number): Promise<void> {
     label: s.name,
   }));
 
-  const supporterSelect = createSelect('donation-supporter', supporterOptions, { required: true, value: String(donation.supporter_id) });
+  const supporterCombobox = createSearchableSelect('donation-supporter', supporterOptions, { required: true, value: String(donation.supporter_id) });
   const amountInput = createNumberInput('donation-amount', { required: true, min: 0, step: 1, value: donation.amount });
   const currencySelect = createSelect('donation-currency', CURRENCY_OPTIONS, { value: donation.currency });
   const dateInput = createDateInput('donation-date', { required: true, value: donation.donation_date.split('T')[0] });
@@ -330,7 +332,7 @@ async function openEditModal(id: number): Promise<void> {
 
   const form = el('form', {}, [
     errorDiv,
-    createFormGroup('Támogató *', supporterSelect, 'donation-supporter'),
+    createFormGroup('Támogató *', supporterCombobox.element, 'donation-supporter'),
     el('div', { className: 'flex gap-4' }, [
       el('div', { className: 'flex-1' }, [createFormGroup('Összeg *', amountInput, 'donation-amount')]),
       el('div', { className: 'w-24' }, [createFormGroup('Pénznem', currencySelect, 'donation-currency')]),
@@ -345,7 +347,7 @@ async function openEditModal(id: number): Promise<void> {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const supporterId = supporterSelect.value;
+    const supporterId = supporterCombobox.value;
     const amount = amountInput.value;
     const date = dateInput.value;
 
