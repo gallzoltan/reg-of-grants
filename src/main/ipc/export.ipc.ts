@@ -5,19 +5,31 @@ import { exportToXLSX } from '../services/xlsx-export';
 import type { DonationWithSupporter } from '@shared/types/donation';
 import type { ExportResult } from '@shared/types/export';
 
-function fetchDonations(from?: string, to?: string): DonationWithSupporter[] {
-  if (from && to) {
-    return donationsRepo.findByDateRange(from, to);
+interface ExportOptions {
+  from?: string;
+  to?: string;
+  supporterId?: number;
+}
+
+function fetchDonations(opts: ExportOptions): DonationWithSupporter[] {
+  let donations: DonationWithSupporter[];
+  if (opts.from && opts.to) {
+    donations = donationsRepo.findByDateRange(opts.from, opts.to);
+  } else {
+    donations = donationsRepo.findAll();
   }
-  return donationsRepo.findAll();
+  if (opts.supporterId) {
+    donations = donations.filter((d) => d.supporter_id === opts.supporterId);
+  }
+  return donations;
 }
 
 export function registerExportHandlers(): void {
-  ipcMain.handle('export:csv', async (_event, opts: { from?: string; to?: string }): Promise<ExportResult | null> => {
+  ipcMain.handle('export:csv', async (_event, opts: ExportOptions): Promise<ExportResult | null> => {
     const window = BrowserWindow.getFocusedWindow();
     if (!window) return null;
 
-    const donations = fetchDonations(opts.from, opts.to);
+    const donations = fetchDonations(opts);
 
     const result = await dialog.showSaveDialog(window, {
       title: 'CSV exportálás',
@@ -34,11 +46,11 @@ export function registerExportHandlers(): void {
     return { filePath: result.filePath, count: donations.length };
   });
 
-  ipcMain.handle('export:xlsx', async (_event, opts: { from?: string; to?: string }): Promise<ExportResult | null> => {
+  ipcMain.handle('export:xlsx', async (_event, opts: ExportOptions): Promise<ExportResult | null> => {
     const window = BrowserWindow.getFocusedWindow();
     if (!window) return null;
 
-    const donations = fetchDonations(opts.from, opts.to);
+    const donations = fetchDonations(opts);
 
     const result = await dialog.showSaveDialog(window, {
       title: 'XLSX exportálás',

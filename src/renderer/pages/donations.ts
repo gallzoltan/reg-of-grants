@@ -418,10 +418,11 @@ async function doExport(format: 'csv' | 'xlsx'): Promise<void> {
 
   const from = filterFromInput.value || undefined;
   const to = filterToInput.value || undefined;
+  const supporterId = filterSupporterCombobox.value ? Number(filterSupporterCombobox.value) : undefined;
 
   try {
     const channel = format === 'csv' ? 'export:csv' : 'export:xlsx';
-    const result = await window.electronAPI.invoke(channel, { from, to });
+    const result = await window.electronAPI.invoke(channel, { from, to, supporterId });
 
     if (!result) return; // cancelled
 
