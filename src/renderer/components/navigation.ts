@@ -11,7 +11,6 @@ const navItems: NavItem[] = [
   { id: 'donations', label: 'Adományok', icon: '&#9830;' },
   { id: 'import', label: 'Importálás', icon: '&#8677;' },
   { id: 'reports', label: 'Jelentések', icon: '&#9776;' },
-  { id: 'export', label: 'Exportálás', icon: '&#8680;' },
 ];
 
 export function renderNavigation(container: HTMLElement): void {

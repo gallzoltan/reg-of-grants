@@ -19,6 +19,7 @@ import {
 let pageContainer: HTMLElement;
 let tableBody: HTMLTableSectionElement;
 let summaryContainer: HTMLElement;
+let exportStatusContainer: HTMLElement;
 let filterSupporterCombobox: SearchableSelect;
 let filterFromInput: HTMLInputElement;
 let filterToInput: HTMLInputElement;
@@ -84,6 +85,10 @@ export async function renderDonationsPage(container: HTMLElement): Promise<void>
       filterToInput,
     ]),
     el('div', { className: 'flex gap-2' }, [filterBtn, clearFilterBtn]),
+    el('div', { className: 'ml-auto border-l border-gray-300 pl-3 flex gap-2' }, [
+      createExportButton('CSV export', 'csv'),
+      createExportButton('XLSX export', 'xlsx'),
+    ]),
   ]);
 
   // Header bar with add button
@@ -117,10 +122,14 @@ export async function renderDonationsPage(container: HTMLElement): Promise<void>
   // Summary
   summaryContainer = el('div', { className: 'mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700' });
 
+  // Export status
+  exportStatusContainer = el('div', { className: 'mt-2' });
+
   container.appendChild(filterBar);
   container.appendChild(headerBar);
   container.appendChild(tableWrapper);
   container.appendChild(summaryContainer);
+  container.appendChild(exportStatusContainer);
 
   tableBody = document.getElementById('donations-table-body') as HTMLTableSectionElement;
 
@@ -388,6 +397,45 @@ async function handleDelete(donation: DonationWithSupporter): Promise<void> {
     await loadDonations();
   } catch (error) {
     alert(`Hiba a törléskor: ${(error as Error).message}`);
+  }
+}
+
+// ── Export ──
+
+function createExportButton(label: string, format: 'csv' | 'xlsx'): HTMLButtonElement {
+  const btn = el('button', {
+    type: 'button',
+    className: format === 'csv'
+      ? 'rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700'
+      : 'rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700',
+  }, [label]) as HTMLButtonElement;
+  btn.addEventListener('click', () => doExport(format));
+  return btn;
+}
+
+async function doExport(format: 'csv' | 'xlsx'): Promise<void> {
+  clearElement(exportStatusContainer);
+
+  const from = filterFromInput.value || undefined;
+  const to = filterToInput.value || undefined;
+
+  try {
+    const channel = format === 'csv' ? 'export:csv' : 'export:xlsx';
+    const result = await window.electronAPI.invoke(channel, { from, to });
+
+    if (!result) return; // cancelled
+
+    exportStatusContainer.appendChild(
+      el('div', { className: 'rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700' }, [
+        `Sikeres exportálás: ${result.count} tétel mentve ide: ${result.filePath}`,
+      ]),
+    );
+  } catch (error) {
+    exportStatusContainer.appendChild(
+      el('div', { className: 'rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700' }, [
+        `Hiba az exportálás során: ${(error as Error).message}`,
+      ]),
+    );
   }
 }
 
