@@ -62,6 +62,17 @@ const migrations: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_donations_reference ON donations(reference);
     `,
   },
+  {
+    version: 2,
+    description: 'Add cid, nickname, country, postcode, city columns to supporters',
+    up: `
+      ALTER TABLE supporters ADD COLUMN cid TEXT;
+      ALTER TABLE supporters ADD COLUMN nickname TEXT;
+      ALTER TABLE supporters ADD COLUMN country TEXT;
+      ALTER TABLE supporters ADD COLUMN postcode TEXT;
+      ALTER TABLE supporters ADD COLUMN city TEXT;
+    `,
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

@@ -13,19 +13,29 @@ import {
 
 let pageContainer: HTMLElement;
 let tableBody: HTMLTableSectionElement;
+let allSupporters: SupporterWithContacts[] = [];
+let searchInput: HTMLInputElement;
 
 export function renderSupportersPage(container: HTMLElement): void {
   pageContainer = container;
   clearElement(container);
 
-  // Header bar with add button
+  // Header bar with search and add button
   const addBtn = el('button', {
-    className: 'rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700',
+    className: 'rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 shrink-0',
   }, ['+ Új támogató']);
   addBtn.addEventListener('click', () => openCreateModal());
 
-  const headerBar = el('div', { className: 'mb-4 flex items-center justify-between' }, [
-    el('p', { className: 'text-sm text-gray-500' }, ['Támogatók listája']),
+  searchInput = el('input', {
+    type: 'text',
+    placeholder: 'Keresés név, email, telefon alapján…',
+    className: 'flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20',
+  }) as HTMLInputElement;
+  searchInput.addEventListener('input', () => applyFilter());
+
+  const headerBar = el('div', { className: 'mb-4 flex items-center gap-3' }, [
+    el('p', { className: 'text-sm text-gray-500 shrink-0' }, ['Támogatók listája']),
+    searchInput,
     addBtn,
   ]);
 
@@ -57,12 +67,32 @@ export function renderSupportersPage(container: HTMLElement): void {
 
 async function loadSupporters(): Promise<void> {
   try {
-    const supporters = await window.electronAPI.invoke('supporters:list');
-    renderTable(supporters);
+    allSupporters = await window.electronAPI.invoke('supporters:list');
+    applyFilter();
   } catch (error) {
     clearElement(tableBody);
     showError(pageContainer, `Hiba a támogatók betöltésekor: ${(error as Error).message}`);
   }
+}
+
+function applyFilter(): void {
+  const q = searchInput.value.trim().toLowerCase();
+  if (!q) {
+    renderTable(allSupporters);
+    return;
+  }
+  const filtered = allSupporters.filter((s) =>
+    s.name.toLowerCase().includes(q) ||
+    (s.nickname && s.nickname.toLowerCase().includes(q)) ||
+    (s.cid && s.cid.toLowerCase().includes(q)) ||
+    (s.city && s.city.toLowerCase().includes(q)) ||
+    (s.postcode && s.postcode.toLowerCase().includes(q)) ||
+    (s.address && s.address.toLowerCase().includes(q)) ||
+    (s.country && s.country.toLowerCase().includes(q)) ||
+    s.emails.some((e) => e.email.toLowerCase().includes(q)) ||
+    s.phones.some((p) => p.phone.toLowerCase().includes(q)),
+  );
+  renderTable(filtered);
 }
 
 // ── Table rendering ──
@@ -71,10 +101,11 @@ function renderTable(supporters: SupporterWithContacts[]): void {
   clearElement(tableBody);
 
   if (supporters.length === 0) {
+    const message = allSupporters.length === 0
+      ? 'Még nincs támogató rögzítve.'
+      : 'Nincs találat a keresésre.';
     const emptyRow = el('tr', {}, [
-      el('td', { className: 'px-4 py-8 text-center text-gray-400', colspan: '5' }, [
-        'Még nincs támogató rögzítve.',
-      ]),
+      el('td', { className: 'px-4 py-8 text-center text-gray-400', colspan: '5' }, [message]),
     ]);
     tableBody.appendChild(emptyRow);
     return;
@@ -83,6 +114,12 @@ function renderTable(supporters: SupporterWithContacts[]): void {
   for (const supporter of supporters) {
     tableBody.appendChild(createSupporterRow(supporter));
   }
+}
+
+function formatAddress(supporter: SupporterWithContacts): string {
+  const cityPart = [supporter.postcode, supporter.city].filter(Boolean).join(' ');
+  const parts = [cityPart, supporter.address].filter(Boolean);
+  return parts.join(', ') || '—';
 }
 
 function createSupporterRow(supporter: SupporterWithContacts): HTMLTableRowElement {
@@ -98,7 +135,7 @@ function createSupporterRow(supporter: SupporterWithContacts): HTMLTableRowEleme
 
   return el('tr', { className: 'hover:bg-gray-50 transition-colors' }, [
     el('td', { className: 'px-4 py-3 font-medium text-gray-900' }, [supporter.name]),
-    el('td', { className: 'px-4 py-3 text-gray-600' }, [supporter.address || '—']),
+    el('td', { className: 'px-4 py-3 text-gray-600' }, [formatAddress(supporter)]),
     el('td', { className: 'px-4 py-3 text-gray-600' }, [formatEmailList(supporter.emails)]),
     el('td', { className: 'px-4 py-3 text-gray-600' }, [formatPhoneList(supporter.phones)]),
     el('td', { className: 'px-4 py-3 text-right space-x-1' }, [editBtn, deleteBtn]),
@@ -109,7 +146,12 @@ function createSupporterRow(supporter: SupporterWithContacts): HTMLTableRowEleme
 
 function openCreateModal(): void {
   const nameInput = createTextInput('supporter-name', { required: true, placeholder: 'Támogató neve' });
-  const addressInput = createTextInput('supporter-address', { placeholder: 'Cím (opcionális)' });
+  const cidInput = createTextInput('supporter-cid', { placeholder: 'Azonosító (opcionális)' });
+  const nicknameInput = createTextInput('supporter-nickname', { placeholder: 'Becenév (opcionális)' });
+  const countryInput = createTextInput('supporter-country', { placeholder: 'Ország (opcionális)' });
+  const postcodeInput = createTextInput('supporter-postcode', { placeholder: 'Irányítószám (opcionális)' });
+  const cityInput = createTextInput('supporter-city', { placeholder: 'Város (opcionális)' });
+  const addressInput = createTextInput('supporter-address', { placeholder: 'Utca, házszám (opcionális)' });
   const notesInput = createTextarea('supporter-notes', { placeholder: 'Megjegyzés (opcionális)', rows: '2' });
 
   const emailEditor = createContactEditor('email');
@@ -120,7 +162,16 @@ function openCreateModal(): void {
   const form = el('form', {}, [
     errorDiv,
     createFormGroup('Név *', nameInput, 'supporter-name'),
-    createFormGroup('Cím', addressInput, 'supporter-address'),
+    el('div', { className: 'grid grid-cols-2 gap-4' }, [
+      createFormGroup('Azonosító (CID)', cidInput, 'supporter-cid'),
+      createFormGroup('Becenév', nicknameInput, 'supporter-nickname'),
+    ]),
+    el('div', { className: 'grid grid-cols-3 gap-4' }, [
+      createFormGroup('Ország', countryInput, 'supporter-country'),
+      createFormGroup('Irányítószám', postcodeInput, 'supporter-postcode'),
+      createFormGroup('Város', cityInput, 'supporter-city'),
+    ]),
+    createFormGroup('Utca, házszám', addressInput, 'supporter-address'),
     emailEditor.element,
     phoneEditor.element,
     createFormGroup('Megjegyzés', notesInput, 'supporter-notes'),
@@ -148,6 +199,11 @@ function openCreateModal(): void {
     try {
       await window.electronAPI.invoke('supporters:create', {
         name,
+        cid: cidInput.value.trim() || undefined,
+        nickname: nicknameInput.value.trim() || undefined,
+        country: countryInput.value.trim() || undefined,
+        postcode: postcodeInput.value.trim() || undefined,
+        city: cityInput.value.trim() || undefined,
         address: addressInput.value.trim() || undefined,
         notes: notesInput.value.trim() || undefined,
         emails: emails.length > 0 ? emails : undefined,
@@ -173,6 +229,11 @@ async function openEditModal(id: number): Promise<void> {
   }
 
   const nameInput = createTextInput('supporter-name', { value: supporter.name, required: true });
+  const cidInput = createTextInput('supporter-cid', { value: supporter.cid || '' });
+  const nicknameInput = createTextInput('supporter-nickname', { value: supporter.nickname || '' });
+  const countryInput = createTextInput('supporter-country', { value: supporter.country || '' });
+  const postcodeInput = createTextInput('supporter-postcode', { value: supporter.postcode || '' });
+  const cityInput = createTextInput('supporter-city', { value: supporter.city || '' });
   const addressInput = createTextInput('supporter-address', { value: supporter.address || '' });
   const notesInput = createTextarea('supporter-notes', { value: supporter.notes || '', rows: '2' });
 
@@ -249,7 +310,16 @@ async function openEditModal(id: number): Promise<void> {
   const form = el('form', {}, [
     errorDiv,
     createFormGroup('Név *', nameInput, 'supporter-name'),
-    createFormGroup('Cím', addressInput, 'supporter-address'),
+    el('div', { className: 'grid grid-cols-2 gap-4' }, [
+      createFormGroup('Azonosító (CID)', cidInput, 'supporter-cid'),
+      createFormGroup('Becenév', nicknameInput, 'supporter-nickname'),
+    ]),
+    el('div', { className: 'grid grid-cols-3 gap-4' }, [
+      createFormGroup('Ország', countryInput, 'supporter-country'),
+      createFormGroup('Irányítószám', postcodeInput, 'supporter-postcode'),
+      createFormGroup('Város', cityInput, 'supporter-city'),
+    ]),
+    createFormGroup('Utca, házszám', addressInput, 'supporter-address'),
     contactsContainer,
     createFormGroup('Megjegyzés', notesInput, 'supporter-notes'),
     createFormButtons('Mentés', () => { hideModal(); loadSupporters(); }),
@@ -267,6 +337,11 @@ async function openEditModal(id: number): Promise<void> {
       await window.electronAPI.invoke('supporters:update', {
         id: supporter!.id,
         name,
+        cid: cidInput.value.trim() || undefined,
+        nickname: nicknameInput.value.trim() || undefined,
+        country: countryInput.value.trim() || undefined,
+        postcode: postcodeInput.value.trim() || undefined,
+        city: cityInput.value.trim() || undefined,
         address: addressInput.value.trim() || undefined,
         notes: notesInput.value.trim() || undefined,
       });

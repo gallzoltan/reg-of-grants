@@ -23,8 +23,8 @@ export function create(input: CreateSupporterInput): SupporterWithContacts {
   const db = getDatabase();
 
   const insertSupporter = db.prepare(`
-    INSERT INTO supporters (name, address, notes)
-    VALUES (@name, @address, @notes)
+    INSERT INTO supporters (name, cid, nickname, country, postcode, city, address, notes)
+    VALUES (@name, @cid, @nickname, @country, @postcode, @city, @address, @notes)
   `);
 
   const insertEmail = db.prepare(`
@@ -40,6 +40,11 @@ export function create(input: CreateSupporterInput): SupporterWithContacts {
   const transaction = db.transaction(() => {
     const result = insertSupporter.run({
       name: input.name,
+      cid: input.cid ?? null,
+      nickname: input.nickname ?? null,
+      country: input.country ?? null,
+      postcode: input.postcode ?? null,
+      city: input.city ?? null,
       address: input.address ?? null,
       notes: input.notes ?? null,
     });
@@ -102,6 +107,26 @@ export function update(input: UpdateSupporterInput): Supporter {
   if (input.name !== undefined) {
     fields.push('name = @name');
     params.name = input.name;
+  }
+  if (input.cid !== undefined) {
+    fields.push('cid = @cid');
+    params.cid = input.cid;
+  }
+  if (input.nickname !== undefined) {
+    fields.push('nickname = @nickname');
+    params.nickname = input.nickname;
+  }
+  if (input.country !== undefined) {
+    fields.push('country = @country');
+    params.country = input.country;
+  }
+  if (input.postcode !== undefined) {
+    fields.push('postcode = @postcode');
+    params.postcode = input.postcode;
+  }
+  if (input.city !== undefined) {
+    fields.push('city = @city');
+    params.city = input.city;
   }
   if (input.address !== undefined) {
     fields.push('address = @address');

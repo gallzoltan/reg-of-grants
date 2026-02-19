@@ -1,6 +1,11 @@
 export interface Supporter {
   id: number;
   name: string;
+  cid: string | null;
+  nickname: string | null;
+  country: string | null;
+  postcode: string | null;
+  city: string | null;
   address: string | null;
   notes: string | null;
   created_at: string;
@@ -30,6 +35,11 @@ export interface SupporterWithContacts extends Supporter {
 
 export interface CreateSupporterInput {
   name: string;
+  cid?: string;
+  nickname?: string;
+  country?: string;
+  postcode?: string;
+  city?: string;
   address?: string;
   notes?: string;
   emails?: Array<{ email: string; is_primary?: boolean }>;
@@ -39,6 +49,11 @@ export interface CreateSupporterInput {
 export interface UpdateSupporterInput {
   id: number;
   name?: string;
+  cid?: string;
+  nickname?: string;
+  country?: string;
+  postcode?: string;
+  city?: string;
   address?: string;
   notes?: string;
 }

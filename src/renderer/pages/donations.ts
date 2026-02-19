@@ -422,7 +422,7 @@ async function doExport(format: 'csv' | 'xlsx'): Promise<void> {
 
   try {
     const channel = format === 'csv' ? 'export:csv' : 'export:xlsx';
-    const result = await window.electronAPI.invoke(channel, { from, to, supporterId });
+    const result = await window.electronAPI.invoke(channel, { from, to, ...(supporterId && { supporterId }) });
 
     if (!result) return; // cancelled
 
