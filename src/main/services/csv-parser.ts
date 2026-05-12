@@ -21,13 +21,18 @@ function parseAmount(amountStr: string): number {
 }
 
 function isPositiveAmount(amountStr: string): boolean {
-  return amountStr.trim().startsWith('+');
+  return !amountStr.trim().startsWith('-');
 }
 
 export function parseTransactionCSV(filePath: string): ParsedTransaction[] {
-  let content = fs.readFileSync(filePath, 'utf-8');
+  const buffer = fs.readFileSync(filePath);
 
-  // Remove BOM if present
+  // Detect encoding: UTF-8 with BOM, valid UTF-8, or ISO-8859-2 (Hungarian bank exports)
+  let content = new TextDecoder('utf-8', { fatal: false }).decode(buffer);
+  if (content.includes('�')) {
+    content = new TextDecoder('iso-8859-2').decode(buffer);
+  }
+  // Remove UTF-8 BOM if present
   if (content.charCodeAt(0) === 0xFEFF) {
     content = content.slice(1);
   }
