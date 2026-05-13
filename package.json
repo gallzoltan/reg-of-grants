@@ -1,14 +1,17 @@
 {
   "name": "barbi-szta",
   "productName": "szta-donation-tracker",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Támogatás nyilvántartó - Foundation donation tracker",
   "author": "Gáll Zoltán",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "cross-env ELECTRON_DISABLE_SANDBOX=true electron-forge start",
+    "prepackage": "npm version patch --no-git-tag-version",
     "package": "electron-forge package",
+    "premake": "npm version patch --no-git-tag-version",
     "make": "electron-forge make",
+    "premake_deb": "npm version patch --no-git-tag-version",
     "make_deb": "electron-forge make --targets deb",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx ."
